@@ -47,3 +47,8 @@ CLAUDE.md
 
 .docs/
 .claude/
+
+# Release artifacts (built locally, attached to GitHub releases instead of committed)
+chrome-mcp-extension-*.zip
+native-server-bridge-*.tar.gz
+*.tar.gz

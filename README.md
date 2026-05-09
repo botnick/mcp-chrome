@@ -49,6 +49,23 @@ Chrome MCP Server is a Chrome extension-based **Model Context Protocol (MCP) ser
 
 Self-build install: no `npm install -g`, no release zip — you build the extension and native bridge yourself, then register them together.
 
+### One-shot installer (recommended)
+
+If you just want it working, `scripts/quick-install.sh` runs the full sequence below — install deps, drop in the prebuilt WASM, build everything, register the native host, and add `chrome-mcp` to Claude Code.
+
+```bash
+git clone https://github.com/itorz7/mcp-chrome.git
+cd mcp-chrome
+./scripts/quick-install.sh                # build, then prompt for the extension ID
+./scripts/quick-install.sh <EXT_ID>       # build + register in one shot if you already have the ID
+./scripts/quick-install.sh --rebuild      # force a clean rebuild
+./scripts/quick-install.sh --skip-build   # only re-register an existing build
+```
+
+After it finishes: `Cmd+Q` Chrome, reopen, click **Connect** in the popup, then `claude mcp list` should show `chrome-mcp ... ✓ Connected`.
+
+If you'd rather run each step yourself (or you're on a workflow the installer doesn't cover), the manual flow below is the same sequence broken out.
+
 ### Prerequisites
 
 - Node.js >= 20 (tested on v22)
