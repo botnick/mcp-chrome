@@ -151,6 +151,14 @@ export abstract class BaseBrowserToolExecutor implements ToolExecutor {
   }
 
   /**
+   * Resolve the effective background flag.
+   * Default is true (do NOT steal focus). Caller must explicitly pass background=false to focus.
+   */
+  protected resolveBackground(arg: boolean | undefined): boolean {
+    return arg !== false;
+  }
+
+  /**
    * Get the active tab. When windowId provided, search within that window; otherwise currentWindow.
    */
   protected async getActiveTabInWindow(windowId?: number): Promise<chrome.tabs.Tab | null> {
