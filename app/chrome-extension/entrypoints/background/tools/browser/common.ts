@@ -15,7 +15,7 @@ interface NavigateToolParams {
   refresh?: boolean;
   tabId?: number;
   windowId?: number;
-  background?: boolean; // when true, do not activate tab or focus window
+  background?: boolean; // default true: do not activate tab or focus window. Pass false to explicitly bring the tab/window to the foreground.
 }
 
 /**
@@ -46,9 +46,9 @@ class NavigateTool extends BaseBrowserToolExecutor {
       url,
       refresh = false,
       tabId,
-      background,
       windowId,
     } = args;
+    const background = this.resolveBackground(args.background);
 
     console.log(
       `Attempting to ${refresh ? 'refresh current tab' : `open URL: ${url}`} with options:`,
