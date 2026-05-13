@@ -1,163 +1,134 @@
-# Fastify Chrome Native Messaging服务
+# Chrome Native Messaging Server
 
-这是一个基于Fastify的TypeScript项目，用于与Chrome扩展进行原生通信。
+A Fastify-based TypeScript service for native communication with Chrome extensions.
 
-## 功能特性
+## Features
 
-- 通过Chrome Native Messaging协议与Chrome扩展进行双向通信
-- **支持多浏览器**: Chrome 和 Chromium (包括 Linux、macOS 和 Windows)
-- 提供RESTful API服务
-- 完全使用TypeScript开发
-- 包含完整的测试套件
-- 遵循代码质量最佳实践
+- Bidirectional communication via Chrome Native Messaging protocol
+- **Multi-browser support**: Chrome and Chromium (Linux, macOS, Windows)
+- RESTful API server
+- Full TypeScript
+- Complete test suite
 
-## 开发环境设置
+## Setup
 
-### 前置条件
+### Prerequisites
 
 - Node.js 20+
-- npm 8+ 或 pnpm 8+
+- npm 8+ or pnpm 8+
 
-### 安装
+### Install
 
 ```bash
-git clone https://github.com/your-username/fastify-chrome-native.git
-cd fastify-chrome-native
+git clone https://github.com/botnick/mcp-chrome.git
+cd mcp-chrome
 npm install
 ```
 
-### 开发
+### Development
 
-1. 本地构建注册native server
+1. Build and register the native server:
 
 ```bash
 cd app/native-server
 npm run dev
 ```
 
-2. 启动chrome extension
+2. Start the Chrome extension:
 
 ```bash
 cd app/chrome-extension
 npm run dev
 ```
 
-### 构建
+### Build
 
 ```bash
 npm run build
 ```
 
-### 注册Native Messaging主机
+### Register Native Messaging Host
 
-#### 自动检测并注册所有已安装的浏览器
+#### Auto-detect and register all installed browsers
 
 ```bash
 mcp-chrome-bridge register --detect
 ```
 
-#### 注册特定浏览器
+#### Register a specific browser
 
 ```bash
-# 仅注册 Chrome
+# Chrome only
 mcp-chrome-bridge register --browser chrome
 
-# 仅注册 Chromium
+# Chromium only
 mcp-chrome-bridge register --browser chromium
 
-# 注册所有支持的浏览器
+# All supported browsers
 mcp-chrome-bridge register --browser all
 ```
 
-#### 全局安装（会自动注册检测到的浏览器）
+#### Global install (auto-registers detected browsers)
 
 ```bash
 npm i -g mcp-chrome-bridge
 ```
 
-#### 浏览器支持
+#### Browser Support
 
-| 浏览器        | Linux | macOS | Windows |
+| Browser       | Linux | macOS | Windows |
 | ------------- | ----- | ----- | ------- |
-| Google Chrome | ✓     | ✓     | ✓       |
-| Chromium      | ✓     | ✓     | ✓       |
+| Google Chrome | Yes   | Yes   | Yes     |
+| Chromium      | Yes   | Yes   | Yes     |
 
-注册位置：
+Registration paths:
 
 - **Linux**: `~/.config/[browser-name]/NativeMessagingHosts/`
 - **macOS**: `~/Library/Application Support/[Browser]/NativeMessagingHosts/`
 - **Windows**: `%APPDATA%\[Browser]\NativeMessagingHosts\`
 
-### 与Chrome扩展集成
-
-以下是Chrome扩展中如何使用此服务的简单示例：
+### Chrome Extension Integration
 
 ```javascript
 // background.js
 let nativePort = null;
 let serverRunning = false;
 
-// 启动Native Messaging服务
 function startServer() {
-  if (nativePort) {
-    console.log('已连接到Native Messaging主机');
-    return;
-  }
+  if (nativePort) return;
 
   try {
     nativePort = chrome.runtime.connectNative('com.yourcompany.fastify_native_host');
 
     nativePort.onMessage.addListener((message) => {
-      console.log('收到Native消息:', message);
-
       if (message.type === 'started') {
         serverRunning = true;
-        console.log(`服务已启动，端口: ${message.payload.port}`);
       } else if (message.type === 'stopped') {
         serverRunning = false;
-        console.log('服务已停止');
       } else if (message.type === 'error') {
-        console.error('Native错误:', message.payload.message);
+        console.error('Native error:', message.payload.message);
       }
     });
 
     nativePort.onDisconnect.addListener(() => {
-      console.log('Native连接断开:', chrome.runtime.lastError);
       nativePort = null;
       serverRunning = false;
     });
 
-    // 启动服务器
     nativePort.postMessage({ type: 'start', payload: { port: 3000 } });
   } catch (error) {
-    console.error('启动Native Messaging时出错:', error);
+    console.error('Failed to start Native Messaging:', error);
   }
 }
 
-// 停止服务器
 function stopServer() {
   if (nativePort && serverRunning) {
     nativePort.postMessage({ type: 'stop' });
   }
 }
 
-// 测试与服务器的通信
-async function testPing() {
-  try {
-    const response = await fetch('http://localhost:3000/ping');
-    const data = await response.json();
-    console.log('Ping响应:', data);
-    return data;
-  } catch (error) {
-    console.error('Ping失败:', error);
-    return null;
-  }
-}
-
-// 在扩展启动时连接Native主机
 chrome.runtime.onStartup.addListener(startServer);
 
-// 导出供popup或内容脚本使用的API
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'startServer') {
     startServer();
@@ -166,18 +137,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     stopServer();
     sendResponse({ success: true });
   } else if (message.action === 'testPing') {
-    testPing().then(sendResponse);
-    return true; // 指示我们将异步发送响应
+    fetch('http://localhost:3000/ping')
+      .then((r) => r.json())
+      .then(sendResponse);
+    return true;
   }
 });
 ```
 
-### 测试
+### Tests
 
 ```bash
 npm run test
 ```
 
-### 许可证
+### License
 
 MIT
