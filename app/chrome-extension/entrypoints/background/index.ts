@@ -21,46 +21,11 @@ import { bootstrapV3 } from './record-replay-v3/bootstrap';
  */
 const ENABLE_RR_V3 = true;
 
-/** Display mode: 'popup' opens a popup, 'sidepanel' opens the side panel */
-type DisplayMode = 'popup' | 'sidepanel';
-const DISPLAY_MODE_KEY = 'displayMode';
-const POPUP_PATH = 'popup.html';
-
-async function getDisplayMode(): Promise<DisplayMode> {
-  const result = await chrome.storage.local.get(DISPLAY_MODE_KEY);
-  return result[DISPLAY_MODE_KEY] === 'sidepanel' ? 'sidepanel' : 'popup';
-}
-
-async function applyDisplayMode(mode: DisplayMode): Promise<void> {
-  if (mode === 'sidepanel') {
-    await chrome.action.setPopup({ popup: '' });
-  } else {
-    await chrome.action.setPopup({ popup: POPUP_PATH });
-  }
-}
-
 /**
  * Background script entry point
  * Initializes all background services and listeners
  */
 export default defineBackground(() => {
-  // Apply display mode on startup
-  getDisplayMode().then(applyDisplayMode);
-
-  // Listen for display mode changes from popup/settings
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[DISPLAY_MODE_KEY]) {
-      applyDisplayMode(changes[DISPLAY_MODE_KEY].newValue as DisplayMode);
-    }
-  });
-
-  // When popup is cleared, clicking the icon opens the side panel
-  chrome.action.onClicked.addListener(async (tab) => {
-    if (tab.id) {
-      await chrome.sidePanel.open({ tabId: tab.id });
-    }
-  });
-
   // Open welcome page on first install
   chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {

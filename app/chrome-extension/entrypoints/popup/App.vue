@@ -8,50 +8,7 @@
       <div class="header glass-nav">
         <div class="header-content">
           <h1 class="header-title">Chrome MCP Server</h1>
-          <div class="display-mode-toggle">
-            <button
-              class="mode-btn"
-              :class="{ active: displayMode === 'popup' }"
-              @click="displayMode !== 'popup' && toggleDisplayMode()"
-              title="Open as popup"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <path d="M3 9h18" />
-              </svg>
-              Popup
-            </button>
-            <button
-              class="mode-btn"
-              :class="{ active: displayMode === 'sidepanel' }"
-              @click="displayMode !== 'sidepanel' && toggleDisplayMode()"
-              title="Open as side panel"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <path d="M15 3v18" />
-              </svg>
-              Panel
-            </button>
-          </div>
         </div>
-        <Transition name="toast">
-          <p v-if="displayModeMessage" class="display-mode-message">{{ displayModeMessage }}</p>
-        </Transition>
       </div>
       <div class="content">
         <!-- Server Configuration Card -->
@@ -444,30 +401,6 @@ const { theme: agentTheme, initTheme } = useAgentTheme();
 
 // Current view state: home or local model page
 const currentView = ref<'home' | 'local-model'>('home');
-
-// Display mode toggle
-const displayMode = ref<'popup' | 'sidepanel'>('popup');
-const displayModeMessage = ref('');
-
-async function loadDisplayMode() {
-  const result = await chrome.storage.local.get('displayMode');
-  displayMode.value = result.displayMode === 'sidepanel' ? 'sidepanel' : 'popup';
-}
-
-async function toggleDisplayMode() {
-  const newMode = displayMode.value === 'popup' ? 'sidepanel' : 'popup';
-  displayMode.value = newMode;
-  await chrome.storage.local.set({ displayMode: newMode });
-
-  if (newMode === 'sidepanel') {
-    displayModeMessage.value = 'Next click on the extension icon will open Side Panel.';
-  } else {
-    displayModeMessage.value = 'Next click on the extension icon will open Popup.';
-  }
-  setTimeout(() => {
-    displayModeMessage.value = '';
-  }, 3000);
-}
 
 // Coming Soon Toast
 const comingSoonToast = ref<{ show: boolean; feature: string }>({ show: false, feature: '' });
@@ -1644,7 +1577,6 @@ onMounted(async () => {
   await initTheme();
   await loadPortPreference();
   await loadModelPreference();
-  await loadDisplayMode();
   await checkNativeConnection();
   await checkServerStatus();
   await refreshStorageStats();
@@ -1715,58 +1647,6 @@ onUnmounted(() => {
   font-weight: 700;
   color: var(--ac-text, #1e293b);
   margin: 0;
-}
-
-/* Display Mode Toggle */
-.display-mode-toggle {
-  display: flex;
-  background: var(--glass-surface-sunken);
-  border-radius: var(--glass-radius-sm);
-  padding: 2px;
-  gap: 2px;
-  border: 1px solid var(--glass-border-subtle);
-}
-
-.mode-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ac-text-muted, #64748b);
-  background: transparent;
-  border: none;
-  border-radius: calc(var(--glass-radius-sm) - 2px);
-  cursor: pointer;
-  transition: all 150ms ease;
-  white-space: nowrap;
-}
-
-.mode-btn:hover:not(.active) {
-  color: var(--ac-text, #1e293b);
-  background: var(--glass-surface);
-}
-
-.mode-btn.active {
-  background: var(--glass-surface-raised);
-  color: var(--ac-text, #1e293b);
-  box-shadow: var(--glass-shadow);
-  font-weight: 600;
-}
-
-.mode-btn svg {
-  flex-shrink: 0;
-}
-
-.display-mode-message {
-  font-size: 11px;
-  color: var(--ac-accent, #7c3aed);
-  margin: 6px 0 0;
-  padding: 4px 8px;
-  background: var(--glass-surface-sunken);
-  border-radius: var(--glass-radius-sm);
-  text-align: center;
 }
 
 .settings-button {
@@ -2139,10 +2019,6 @@ onUnmounted(() => {
   .config-card {
     padding: 12px;
     gap: 10px;
-  }
-
-  .display-mode-toggle {
-    display: none;
   }
 }
 
