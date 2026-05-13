@@ -8,7 +8,7 @@
     <!-- Trigger button (also serves as drag handle) -->
     <button
       ref="triggerRef"
-      class="navigator-trigger"
+      class="navigator-trigger glass glass-hover"
       :class="{ 'navigator-trigger-active': isOpen }"
       @click="handleTriggerClick"
       @dblclick="resetToDefault"
@@ -30,7 +30,7 @@
     <!-- Floating menu -->
     <Transition name="navigator-menu">
       <div v-if="isOpen" class="navigator-overlay" @click="closeMenu">
-        <div class="navigator-menu" :style="menuStyle" @click.stop>
+        <div class="navigator-menu glass-raised glass-appear" :style="menuStyle" @click.stop>
           <div class="navigator-header">
             <span class="navigator-title">Switch Page</span>
             <button class="navigator-close" @click="closeMenu">
@@ -246,21 +246,14 @@ function selectTab(tab: TabType) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ac-surface, #ffffff);
-  border: var(--ac-border-width, 1px) solid var(--ac-border, #e7e5e4);
-  border-radius: var(--ac-radius-button, 8px);
   color: var(--ac-text-muted, #6e6e6e);
   cursor: grab;
-  transition: all var(--ac-motion-fast, 120ms) ease;
-  box-shadow: var(--ac-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   touch-action: none;
   user-select: none;
 }
 
 .navigator-trigger:hover {
-  background: var(--ac-hover-bg, #f5f5f4);
   color: var(--ac-text, #1a1a1a);
-  box-shadow: var(--ac-shadow-float, 0 4px 20px -2px rgba(0, 0, 0, 0.05));
 }
 
 .navigator-trigger:active,
@@ -297,10 +290,6 @@ function selectTab(tab: TabType) {
 .navigator-menu {
   width: 280px;
   max-height: calc(100vh - 80px);
-  background: var(--ac-surface, #ffffff);
-  border: var(--ac-border-width, 1px) solid var(--ac-border, #e7e5e4);
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-float, 0 4px 20px -2px rgba(0, 0, 0, 0.05));
   overflow: hidden;
 }
 

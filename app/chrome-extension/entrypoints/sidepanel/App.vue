@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full w-full bg-slate-50 relative agent-theme" :data-agent-theme="currentTheme">
+  <div class="h-full w-full relative agent-theme glass-backdrop" :data-agent-theme="currentTheme">
     <!-- Sidepanel Navigator - only show on workflows/element-markers pages -->
     <SidepanelNavigator
       v-if="activeTab !== 'agent-chat'"
@@ -38,7 +38,7 @@
     <div v-show="activeTab === 'element-markers'" class="element-markers-content">
       <div class="px-4 py-4">
         <!-- Toolbar: Search + Add Button -->
-        <div class="em-toolbar">
+        <div class="em-toolbar glass glass-transition">
           <div class="em-search-wrapper">
             <svg class="em-search-icon" viewBox="0 0 20 20" width="16" height="16">
               <path
@@ -48,7 +48,7 @@
             </svg>
             <input
               v-model="markerSearch"
-              class="em-search-input"
+              class="em-search-input glass-sunken glass-focus-ring"
               placeholder="Search marker names, selectors..."
               type="text"
             />
@@ -77,8 +77,12 @@
         </div>
 
         <!-- Modal: Add/Edit Marker -->
-        <div v-if="markerEditorOpen" class="em-modal-overlay" @click.self="closeMarkerEditor">
-          <div class="em-modal">
+        <div
+          v-if="markerEditorOpen"
+          class="em-modal-overlay glass-overlay"
+          @click.self="closeMarkerEditor"
+        >
+          <div class="em-modal glass-raised glass-appear">
             <div class="em-modal-header">
               <h3 class="em-modal-title">{{ editingMarkerId ? 'Edit Marker' : 'Add Marker' }}</h3>
               <button class="em-modal-close" @click="closeMarkerEditor">
@@ -96,7 +100,7 @@
                   <label class="em-field-label">Name</label>
                   <input
                     v-model="markerForm.name"
-                    class="em-input"
+                    class="em-input glass-sunken glass-focus-ring"
                     placeholder="e.g. Login Button"
                     required
                   />
@@ -130,7 +134,7 @@
                   <label class="em-field-label">Selector</label>
                   <textarea
                     v-model="markerForm.selector"
-                    class="em-textarea"
+                    class="em-textarea glass-sunken glass-focus-ring"
                     placeholder="CSS selector or XPath"
                     rows="3"
                     required
@@ -153,7 +157,7 @@
         <!-- Markers List -->
         <div v-if="filteredMarkers.length > 0" class="em-list">
           <!-- Statistics (compact) -->
-          <div class="em-stats-bar">
+          <div class="em-stats-bar glass-sunken">
             <span class="em-stats-text">
               <template v-if="markerSearch">
                 Filtered <strong>{{ filteredMarkers.length }}</strong> markers (total
@@ -173,7 +177,10 @@
             class="em-domain-group"
           >
             <!-- Domain Header -->
-            <div class="em-domain-header" @click="toggleDomain(domainGroup.domain)">
+            <div
+              class="em-domain-header glass glass-hover glass-transition"
+              @click="toggleDomain(domainGroup.domain)"
+            >
               <div class="em-domain-info">
                 <svg
                   class="em-domain-icon"
@@ -931,6 +938,7 @@ onUnmounted(() => {
   gap: 8px;
   margin-bottom: 16px;
   align-items: center;
+  padding: 8px 12px;
 }
 
 .em-search-wrapper {
@@ -1014,7 +1022,6 @@ onUnmounted(() => {
 .em-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1035,11 +1042,7 @@ onUnmounted(() => {
   width: calc(100% - 32px);
   max-width: 480px;
   max-height: calc(100vh - 64px);
-  background: var(--ac-surface, #ffffff);
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-float, 0 8px 32px rgba(0, 0, 0, 0.2));
   overflow: hidden;
-  animation: slideUp 200ms ease-out;
 }
 
 @keyframes slideUp {
@@ -1106,8 +1109,6 @@ onUnmounted(() => {
 /* Statistics Bar (compact) */
 .em-stats-bar {
   padding: 10px 16px;
-  background: var(--ac-surface-muted, #f5f5f5);
-  border-radius: var(--ac-radius-inner, 8px);
 }
 
 .em-stats-text {
@@ -1121,18 +1122,9 @@ onUnmounted(() => {
 }
 
 .em-domain-header {
-  background: var(--ac-surface, #ffffff);
-  border: var(--ac-border-width, 1px) solid var(--ac-border, #e7e5e4);
-  border-radius: var(--ac-radius-card, 12px);
   padding: 6px 12px;
   cursor: pointer;
-  transition: all var(--ac-motion-fast, 150ms) ease;
   user-select: none;
-}
-
-.em-domain-header:hover {
-  background: var(--ac-hover-bg, #f5f5f4);
-  box-shadow: var(--ac-shadow-float, 0 4px 12px rgba(0, 0, 0, 0.1));
 }
 
 .em-domain-info {

@@ -59,9 +59,9 @@ async function openDocs(): Promise<void> {
 </script>
 
 <template>
-  <div class="agent-theme welcome-root">
+  <div class="agent-theme welcome-root glass-backdrop">
     <div class="min-h-screen flex flex-col">
-      <header class="welcome-header flex-none px-6 py-5">
+      <header class="welcome-header glass-nav flex-none px-6 py-5">
         <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -104,7 +104,7 @@ async function openDocs(): Promise<void> {
 
       <main class="flex-1 px-6 py-8">
         <div class="max-w-3xl mx-auto space-y-6">
-          <section class="welcome-card welcome-card--primary p-6">
+          <section class="welcome-card welcome-card--primary glass-raised glass-appear p-6">
             <h2 class="welcome-title text-xl font-medium">
               Install <code class="welcome-code">mcp-chrome-bridge</code>
             </h2>
@@ -183,7 +183,7 @@ async function openDocs(): Promise<void> {
             </div>
           </section>
 
-          <details class="welcome-card overflow-hidden">
+          <details class="welcome-card glass overflow-hidden">
             <summary
               class="px-6 py-4 cursor-pointer select-none flex items-center justify-between gap-4"
             >
@@ -275,17 +275,12 @@ async function openDocs(): Promise<void> {
 <style scoped>
 .welcome-root {
   min-height: 100%;
-  background: var(--ac-bg);
-  background-image: var(--ac-bg-pattern);
-  background-size: var(--ac-bg-pattern-size);
   color: var(--ac-text);
   font-family: var(--ac-font-body);
 }
 
 .welcome-header {
-  background: var(--ac-header-bg);
-  border-bottom: var(--ac-border-width) solid var(--ac-header-border);
-  backdrop-filter: blur(8px);
+  border-bottom: none;
 }
 
 .welcome-card {

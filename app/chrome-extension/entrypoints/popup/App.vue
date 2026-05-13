@@ -1,17 +1,63 @@
 <template>
-  <div class="popup-container agent-theme" :data-agent-theme="agentTheme">
+  <div
+    class="popup-container agent-theme glass-backdrop glass-transition"
+    :data-agent-theme="agentTheme"
+  >
     <!-- Home -->
     <div v-show="currentView === 'home'" class="home-view">
-      <div class="header">
+      <div class="header glass-nav">
         <div class="header-content">
           <h1 class="header-title">Chrome MCP Server</h1>
+          <div class="display-mode-toggle">
+            <button
+              class="mode-btn"
+              :class="{ active: displayMode === 'popup' }"
+              @click="displayMode !== 'popup' && toggleDisplayMode()"
+              title="Open as popup"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <path d="M3 9h18" />
+              </svg>
+              Popup
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: displayMode === 'sidepanel' }"
+              @click="displayMode !== 'sidepanel' && toggleDisplayMode()"
+              title="Open as side panel"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <path d="M15 3v18" />
+              </svg>
+              Panel
+            </button>
+          </div>
         </div>
+        <Transition name="toast">
+          <p v-if="displayModeMessage" class="display-mode-message">{{ displayModeMessage }}</p>
+        </Transition>
       </div>
       <div class="content">
         <!-- Server Configuration Card -->
         <div class="section">
           <h2 class="section-title">{{ getMessage('nativeServerConfigLabel') }}</h2>
-          <div class="config-card">
+          <div class="config-card glass-raised glass-appear">
             <div class="status-section">
               <div class="status-header">
                 <p class="status-label">{{ getMessage('runningStatusLabel') }}</p>
@@ -40,12 +86,12 @@
                   {{ copyButtonText }}
                 </button>
               </div>
-              <div class="mcp-config-content">
+              <div class="mcp-config-content glass-sunken">
                 <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
               </div>
             </div>
             <!-- Self-build install helper: show extension ID + register cmd -->
-            <div v-if="extensionId" class="ext-id-section">
+            <div v-if="extensionId" class="ext-id-section glass-sunken">
               <div class="ext-id-header">
                 <p class="ext-id-label">Extension ID (for self-built installs)</p>
               </div>
@@ -71,11 +117,15 @@
                 id="port"
                 :value="nativeServerPort"
                 @input="updatePort"
-                class="port-input"
+                class="port-input glass-sunken glass-focus-ring"
               />
             </div>
 
-            <button class="connect-button" :disabled="isConnecting" @click="testNativeConnection">
+            <button
+              class="connect-button glass-hover"
+              :disabled="isConnecting"
+              @click="testNativeConnection"
+            >
               <BoltIcon />
               <span>{{
                 isConnecting
@@ -91,7 +141,7 @@
         <!-- Quick Tools card -->
         <div class="section">
           <h2 class="section-title">Quick Tools</h2>
-          <div class="rr-icon-buttons">
+          <div class="rr-icon-buttons glass-raised glass-appear">
             <button
               class="rr-icon-btn rr-icon-btn-record rr-icon-btn-coming-soon has-tooltip"
               @click="startRecording"
@@ -126,8 +176,8 @@
         <!-- Management card -->
         <div class="section">
           <h2 class="section-title">Management</h2>
-          <div class="entry-card">
-            <button class="entry-item" @click="openAgentSidepanel">
+          <div class="entry-card glass-raised glass-appear">
+            <button class="entry-item glass-hover" @click="openAgentSidepanel">
               <div class="entry-icon agent">
                 <svg
                   viewBox="0 0 24 24"
@@ -160,7 +210,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <button class="entry-item entry-item-coming-soon" @click="openWorkflowSidepanel">
+            <button
+              class="entry-item entry-item-coming-soon glass-hover"
+              @click="openWorkflowSidepanel"
+            >
               <div class="entry-icon workflow">
                 <WorkflowIcon />
               </div>
@@ -183,7 +236,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <button class="entry-item" @click="openElementMarkerSidepanel">
+            <button class="entry-item glass-hover" @click="openElementMarkerSidepanel">
               <div class="entry-icon marker">
                 <svg
                   viewBox="0 0 24 24"
@@ -216,7 +269,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <button class="entry-item" @click="currentView = 'local-model'">
+            <button class="entry-item glass-hover" @click="currentView = 'local-model'">
               <div class="entry-icon model">
                 <svg
                   viewBox="0 0 24 24"
@@ -253,7 +306,7 @@
         </div>
       </div>
 
-      <div class="footer">
+      <div class="footer glass-nav footer-nav">
         <div class="footer-links">
           <button class="footer-link" @click="openWelcomePage" title="View installation guide">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,7 +387,7 @@
 
     <!-- Coming Soon Toast -->
     <Transition name="toast">
-      <div v-if="comingSoonToast.show" class="coming-soon-toast">
+      <div v-if="comingSoonToast.show" class="coming-soon-toast glass-raised">
         <svg
           class="toast-icon"
           viewBox="0 0 24 24"
@@ -391,6 +444,30 @@ const { theme: agentTheme, initTheme } = useAgentTheme();
 
 // Current view state: home or local model page
 const currentView = ref<'home' | 'local-model'>('home');
+
+// Display mode toggle
+const displayMode = ref<'popup' | 'sidepanel'>('popup');
+const displayModeMessage = ref('');
+
+async function loadDisplayMode() {
+  const result = await chrome.storage.local.get('displayMode');
+  displayMode.value = result.displayMode === 'sidepanel' ? 'sidepanel' : 'popup';
+}
+
+async function toggleDisplayMode() {
+  const newMode = displayMode.value === 'popup' ? 'sidepanel' : 'popup';
+  displayMode.value = newMode;
+  await chrome.storage.local.set({ displayMode: newMode });
+
+  if (newMode === 'sidepanel') {
+    displayModeMessage.value = 'Next click on the extension icon will open Side Panel.';
+  } else {
+    displayModeMessage.value = 'Next click on the extension icon will open Popup.';
+  }
+  setTimeout(() => {
+    displayModeMessage.value = '';
+  }, 3000);
+}
 
 // Coming Soon Toast
 const comingSoonToast = ref<{ show: boolean; feature: string }>({ show: false, feature: '' });
@@ -530,7 +607,7 @@ const runFlow = async (flowId: string) => {
   }
 };
 
-// Legacy “clone/publish/schedule/overrides” are handled in the sidebar or editor
+// Legacy "clone/publish/schedule/overrides" are handled in the sidebar or editor
 
 const nativeConnectionStatus = ref<'unknown' | 'connected' | 'disconnected'>('unknown');
 const isConnecting = ref(false);
@@ -1567,6 +1644,7 @@ onMounted(async () => {
   await initTheme();
   await loadPortPreference();
   await loadModelPreference();
+  await loadDisplayMode();
   await checkNativeConnection();
   await checkServerStatus();
   await refreshStorageStats();
@@ -1614,9 +1692,7 @@ onUnmounted(() => {
 
 <style scoped>
 .popup-container {
-  background: #f1f5f9;
-  border-radius: 24px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border-radius: var(--glass-radius-xl, 20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1625,7 +1701,7 @@ onUnmounted(() => {
 
 .header {
   flex-shrink: 0;
-  padding-left: 20px;
+  padding: 12px 20px;
 }
 
 .header-content {
@@ -1635,16 +1711,68 @@ onUnmounted(() => {
 }
 
 .header-title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--ac-text, #1e293b);
   margin: 0;
+}
+
+/* Display Mode Toggle */
+.display-mode-toggle {
+  display: flex;
+  background: var(--glass-surface-sunken);
+  border-radius: var(--glass-radius-sm);
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--glass-border-subtle);
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ac-text-muted, #64748b);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--glass-radius-sm) - 2px);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.mode-btn:hover:not(.active) {
+  color: var(--ac-text, #1e293b);
+  background: var(--glass-surface);
+}
+
+.mode-btn.active {
+  background: var(--glass-surface-raised);
+  color: var(--ac-text, #1e293b);
+  box-shadow: var(--glass-shadow);
+  font-weight: 600;
+}
+
+.mode-btn svg {
+  flex-shrink: 0;
+}
+
+.display-mode-message {
+  font-size: 11px;
+  color: var(--ac-accent, #7c3aed);
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  background: var(--glass-surface-sunken);
+  border-radius: var(--glass-radius-sm);
+  text-align: center;
 }
 
 .settings-button {
   padding: 8px;
   border-radius: 50%;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   background: none;
   border: none;
   cursor: pointer;
@@ -1652,8 +1780,8 @@ onUnmounted(() => {
 }
 
 .settings-button:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: var(--glass-surface);
+  color: var(--ac-text, #1e293b);
 }
 
 .content {
@@ -1667,18 +1795,11 @@ onUnmounted(() => {
 .content::-webkit-scrollbar {
   display: none;
 }
-.status-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
-}
 
 .status-label {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   margin-bottom: 8px;
 }
 
@@ -1713,314 +1834,27 @@ onUnmounted(() => {
 .status-text {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
-}
-
-.model-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.model-name {
-  font-weight: 600;
-  color: #7c3aed;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.stats-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-}
-
-.stats-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.stats-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.stats-icon {
-  padding: 8px;
-  border-radius: 8px;
-}
-
-.stats-icon.violet {
-  background: #ede9fe;
-  color: #7c3aed;
-}
-
-.stats-icon.teal {
-  background: #ccfbf1;
-  color: #0d9488;
-}
-
-.stats-icon.blue {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.stats-icon.green {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.stats-value {
-  font-size: 30px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
+  color: var(--ac-text, #1e293b);
 }
 
 .section {
-  margin-bottom: 24px;
-}
-
-.secondary-button {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #cbd5e1;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.secondary-button:hover:not(:disabled) {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-}
-
-.secondary-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.primary-button {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.primary-button:hover {
-  background: #2563eb;
+  margin-bottom: 20px;
 }
 
 .section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 12px;
-}
-.current-model-card {
-  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
-  border: 1px solid #e9d5ff;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.current-model-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.current-model-label {
   font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-  margin: 0;
-}
-
-.current-model-badge {
-  background: #8b5cf6;
-  color: white;
-  font-size: 12px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.current-model-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #7c3aed;
-  margin: 0;
-}
-
-.model-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.model-card {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-}
-
-.model-card:hover {
-  border-color: #8b5cf6;
-}
-
-.model-card.selected {
-  border: 2px solid #8b5cf6;
-  background: #faf5ff;
-}
-
-.model-card.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.model-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.model-info {
-  flex: 1;
-}
-
-.model-name {
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 4px 0;
-}
-
-.model-name.selected-text {
-  color: #7c3aed;
-}
-
-.model-description {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-}
-
-.check-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  background: #8b5cf6;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.model-tags {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-.model-tag {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 9999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.model-tag.performance {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.model-tag.size {
-  background: #ddd6fe;
-  color: #5b21b6;
-}
-
-.model-tag.dimension {
-  background: #e5e7eb;
-  color: #4b5563;
+  color: var(--ac-text-muted, #64748b);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .config-card {
-  background: var(--ac-surface, white);
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-.semantic-engine-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.semantic-engine-status {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.semantic-engine-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #8b5cf6;
-  color: white;
-  font-weight: 600;
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.semantic-engine-button:hover:not(:disabled) {
-  background: #7c3aed;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.semantic-engine-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .status-header {
@@ -2035,25 +1869,25 @@ onUnmounted(() => {
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--glass-radius-sm);
   font-size: 14px;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   transition: all 0.2s ease;
 }
 
 .refresh-status-button:hover {
-  background: #f1f5f9;
-  color: #374151;
+  background: var(--glass-surface);
+  color: var(--ac-text, #374151);
 }
 
 .status-timestamp {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--ac-text-subtle, #9ca3af);
   margin-top: 4px;
 }
 
 .mcp-config-section {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--glass-border-subtle);
 }
 
 .mcp-config-header {
@@ -2066,7 +1900,7 @@ onUnmounted(() => {
 .mcp-config-label {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   margin: 0;
 }
 
@@ -2075,9 +1909,9 @@ onUnmounted(() => {
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--glass-radius-sm);
   font-size: 14px;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -2085,14 +1919,11 @@ onUnmounted(() => {
 }
 
 .copy-config-button:hover {
-  background: #f1f5f9;
-  color: #374151;
+  background: var(--glass-surface);
+  color: var(--ac-text, #374151);
 }
 
 .mcp-config-content {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
   padding: 12px;
   overflow-x: auto;
 }
@@ -2101,7 +1932,7 @@ onUnmounted(() => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
   line-height: 1.4;
-  color: #374151;
+  color: var(--ac-text, #374151);
   margin: 0;
   white-space: pre;
   overflow-x: auto;
@@ -2110,61 +1941,68 @@ onUnmounted(() => {
 .ext-id-section {
   margin-top: 12px;
   padding: 12px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  background: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
+
 .ext-id-label {
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: var(--ac-text-muted, #475569);
 }
+
 .ext-id-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .ext-id-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .ext-id-code {
   flex: 1;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--glass-surface-raised);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: 4px;
   padding: 4px 8px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: #0f172a;
+  color: var(--ac-text, #0f172a);
   overflow-x: auto;
   white-space: nowrap;
 }
+
 .ext-id-cmd {
   font-size: 10px;
 }
+
 .ext-id-copy {
   flex-shrink: 0;
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #0f172a;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-surface-raised);
+  color: var(--ac-text, #0f172a);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
+
 .ext-id-copy:hover {
-  background: #e2e8f0;
+  background: var(--glass-surface);
+  box-shadow: var(--glass-shadow);
 }
+
 .ext-id-hint {
   margin: 2px 0 0;
   font-size: 11px;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
 }
 
 .port-section {
@@ -2176,24 +2014,14 @@ onUnmounted(() => {
 .port-label {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
 }
 
 .port-input {
   display: block;
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   padding: 12px;
   font-size: 14px;
-  background: #f8fafc;
-}
-
-.port-input:focus {
-  outline: none;
-  border-color: var(--ac-accent, #d97757);
-  box-shadow: 0 0 0 3px var(--ac-accent-subtle, rgba(217, 119, 87, 0.12));
 }
 
 .connect-button {
@@ -2202,123 +2030,24 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--ac-accent, #d97757);
+  background: var(--ac-accent, #7c3aed);
   color: var(--ac-accent-contrast, white);
   font-weight: 600;
   padding: 12px 16px;
-  border-radius: var(--ac-radius-button, 8px);
+  border-radius: var(--glass-radius);
   border: none;
   cursor: pointer;
-  transition: all var(--ac-motion-fast, 120ms) ease;
-  box-shadow: var(--ac-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+  transition: all 150ms ease;
+  box-shadow: var(--glass-shadow);
 }
 
 .connect-button:hover:not(:disabled) {
-  background: var(--ac-accent-hover, #c4664a);
-  box-shadow: var(--ac-shadow-float, 0 4px 20px -2px rgba(0, 0, 0, 0.05));
+  background: var(--ac-accent-hover, #6d28d9);
+  box-shadow: var(--glass-shadow-raised);
 }
 
 .connect-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
-}
-.error-card {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.error-content {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.error-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.error-details {
-  flex: 1;
-}
-
-.error-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #dc2626;
-  margin: 0 0 4px 0;
-}
-
-.error-message {
-  font-size: 14px;
-  color: #991b1b;
-  margin: 0 0 8px 0;
-  font-weight: 500;
-}
-
-.error-suggestion {
-  font-size: 13px;
-  color: #7f1d1d;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.retry-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #dc2626;
-  color: white;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.retry-button:hover:not(:disabled) {
-  background: #b91c1c;
-}
-
-.retry-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.danger-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: white;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  font-weight: 600;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 16px;
-}
-
-.danger-button:hover:not(:disabled) {
-  border-color: #ef4444;
-  color: #dc2626;
-}
-
-.danger-button:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -2337,9 +2066,16 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
 }
+
 .footer {
   padding: 16px;
   margin-top: auto;
+}
+
+.footer-nav {
+  border-bottom: none;
+  border-top: 1px solid var(--glass-border);
+  box-shadow: 0 -1px 0 var(--glass-border-subtle);
 }
 
 .footer-links {
@@ -2356,17 +2092,17 @@ onUnmounted(() => {
   gap: 4px;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--ac-text-muted, #64748b);
   font-size: 12px;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--glass-radius-sm);
   transition: all 0.2s ease;
 }
 
 .footer-link:hover {
-  color: #8b5cf6;
-  background: #e2e8f0;
+  color: var(--ac-accent, #7c3aed);
+  background: var(--glass-surface);
 }
 
 .footer-link svg {
@@ -2377,7 +2113,7 @@ onUnmounted(() => {
 .footer-text {
   text-align: center;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ac-text-subtle, #94a3b8);
   margin: 0;
 }
 
@@ -2392,80 +2128,21 @@ onUnmounted(() => {
     gap: 8px;
   }
 
-  .rr-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .rr-controls {
-    display: flex;
-    gap: 8px;
-  }
-  .rr-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .rr-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-  }
-  .rr-runoverrides {
-    margin-top: 6px;
-    border: 1px dashed #e5e7eb;
-    border-radius: 8px;
-    padding: 8px;
-    background: #f9fafb;
-  }
-  .rr-meta {
-    display: flex;
-    flex-direction: column;
-  }
-  .rr-name {
-    font-weight: 600;
-  }
-  .rr-desc {
-    font-size: 12px;
-    color: #666;
-  }
-  .empty {
-    color: #888;
-    font-size: 13px;
-  }
-
   .header {
-    padding: 24px 20px 12px;
+    padding: 12px 16px;
   }
 
   .content {
-    padding: 8px 20px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    padding: 8px 16px;
   }
 
   .config-card {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .current-model-card {
     padding: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
   }
 
-  .stats-card {
-    padding: 12px;
-  }
-
-  .stats-value {
-    font-size: 24px;
+  .display-mode-toggle {
+    display: none;
   }
 }
 
@@ -2475,9 +2152,6 @@ onUnmounted(() => {
   gap: 12px;
   justify-content: flex-start;
   padding: 16px;
-  background: var(--ac-surface, white);
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .rr-icon-btn {
@@ -2486,17 +2160,17 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ac-surface-muted, #f2f0eb);
+  background: var(--glass-surface-sunken);
   border: none;
-  border-radius: var(--ac-radius-button, 8px);
+  border-radius: var(--glass-radius-sm);
   color: var(--ac-text-muted, #6e6e6e);
   cursor: pointer;
-  transition: all var(--ac-motion-fast, 120ms) ease;
+  transition: all 150ms ease;
 }
 
 .rr-icon-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--ac-shadow-float, 0 4px 20px -2px rgba(0, 0, 0, 0.05));
+  box-shadow: var(--glass-shadow-raised);
 }
 
 .rr-icon-btn:disabled {
@@ -2598,7 +2272,7 @@ onUnmounted(() => {
   white-space: nowrap;
   color: var(--ac-text-inverse, #ffffff);
   background-color: var(--ac-text, #1a1a1a);
-  border-radius: var(--ac-radius-button, 8px);
+  border-radius: var(--glass-radius-sm);
   opacity: 0;
   visibility: hidden;
   transition:
@@ -2640,9 +2314,6 @@ onUnmounted(() => {
 
 /* Management entry card styles */
 .entry-card {
-  background: var(--ac-surface, white);
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   overflow: hidden;
 }
 
@@ -2654,18 +2325,13 @@ onUnmounted(() => {
   padding: 14px 16px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--ac-border, #e7e5e4);
+  border-bottom: 1px solid var(--glass-border-subtle);
   cursor: pointer;
-  transition: all var(--ac-motion-fast, 120ms) ease;
   text-align: left;
 }
 
 .entry-item:last-child {
   border-bottom: none;
-}
-
-.entry-item:hover {
-  background: var(--ac-hover-bg, #f5f5f4);
 }
 
 .entry-icon {
@@ -2674,13 +2340,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--ac-radius-button, 8px);
+  border-radius: var(--glass-radius-sm);
   flex-shrink: 0;
 }
 
 .entry-icon.agent {
-  background: rgba(217, 119, 87, 0.12);
-  color: var(--ac-accent, #d97757);
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--ac-accent, #7c3aed);
 }
 
 .entry-icon.workflow {
@@ -2734,8 +2400,8 @@ onUnmounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--ac-accent, #d97757);
-  background: rgba(217, 119, 87, 0.12);
+  color: var(--ac-accent, #7c3aed);
+  background: rgba(124, 58, 237, 0.12);
   border-radius: 4px;
   vertical-align: middle;
 }
@@ -2758,12 +2424,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: var(--ac-text, #1a1a1a);
-  color: var(--ac-text-inverse, #ffffff);
+  color: var(--ac-text, #1a1a1a);
   font-size: 13px;
   font-weight: 500;
-  border-radius: var(--ac-radius-card, 12px);
-  box-shadow: var(--ac-shadow-float, 0 4px 20px -2px rgba(0, 0, 0, 0.15));
   z-index: 1000;
   white-space: nowrap;
 }
@@ -2772,7 +2435,7 @@ onUnmounted(() => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: var(--ac-accent, #d97757);
+  color: var(--ac-accent, #7c3aed);
 }
 
 /* Toast transition */

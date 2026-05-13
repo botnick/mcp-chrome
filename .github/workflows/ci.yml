@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter chrome-mcp-shared build
+
+      - name: Lint
+        run: pnpm --filter chrome-mcp-server lint
+        continue-on-error: true
+
+      - name: Type check
+        run: pnpm --filter chrome-mcp-server typecheck
+        continue-on-error: true
+
+  build-extension:
+    name: Build Extension
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Copy prebuilt WASM
+        run: |
+          mkdir -p packages/wasm-simd/pkg app/chrome-extension/workers
+          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math.js packages/wasm-simd/pkg/
+          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math_bg.wasm packages/wasm-simd/pkg/
+          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math.js app/chrome-extension/workers/
+          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math_bg.wasm app/chrome-extension/workers/
+
+      - name: Build shared
+        run: pnpm --filter chrome-mcp-shared build
+
+      - name: Build native server
+        run: pnpm --filter mcp-chrome-bridge build
+
+      - name: Build extension
+        run: pnpm --filter chrome-mcp-server build
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension-${{ github.sha }}
+          path: app/chrome-extension/.output/chrome-mv3/
+          retention-days: 14
+
+  build-native:
+    name: Build Native Server
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm --filter chrome-mcp-shared build
+
+      - name: Build native server
+        run: pnpm --filter mcp-chrome-bridge build
+
+      - name: Run tests
+        run: pnpm --filter mcp-chrome-bridge test
+        continue-on-error: true

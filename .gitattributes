@@ -1,1 +1,7 @@
 *.onnx filter=lfs diff=lfs merge=lfs -text
+
+# Fork-only files: always keep ours during upstream merge
+app/chrome-extension/entrypoints/styles/glass/** merge=ours
+app/chrome-extension/components/glass/** merge=ours
+scripts/quick-install.ps1 merge=ours
+FORK_SYNC.md merge=ours

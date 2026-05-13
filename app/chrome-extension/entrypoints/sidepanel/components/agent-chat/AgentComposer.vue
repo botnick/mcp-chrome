@@ -86,14 +86,9 @@
 
     <!-- Floating Input Card -->
     <div
-      class="flex flex-col transition-all"
+      class="flex flex-col glass-raised glass-transition"
       :style="{
-        backgroundColor: 'var(--ac-surface)',
-        borderRadius: 'var(--ac-radius-card)',
-        border: isDragOver
-          ? '2px solid var(--ac-accent)'
-          : 'var(--ac-border-width) solid var(--ac-border)',
-        boxShadow: 'var(--ac-shadow-float)',
+        border: isDragOver ? '2px solid var(--ac-accent)' : undefined,
       }"
     >
       <!-- Textarea wrapper with expand button -->

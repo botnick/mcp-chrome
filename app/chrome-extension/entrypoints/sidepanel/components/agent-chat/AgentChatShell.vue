@@ -1,14 +1,7 @@
 <template>
   <div ref="shellRef" class="h-full flex flex-col overflow-hidden relative">
     <!-- Header -->
-    <header
-      class="flex-none px-5 py-3 flex items-center justify-between z-20"
-      :style="{
-        backgroundColor: 'var(--ac-header-bg)',
-        borderBottom: 'var(--ac-border-width) solid var(--ac-header-border)',
-        backdropFilter: 'blur(8px)',
-      }"
-    >
+    <header class="flex-none px-5 py-3 flex items-center justify-between z-20 glass-nav">
       <slot name="header" />
     </header>
 
@@ -30,10 +23,8 @@
     <!-- Footer / Composer -->
     <footer
       ref="composerRef"
-      class="flex-none px-5 pb-5 pt-2"
-      :style="{
-        background: `linear-gradient(to top, var(--ac-bg), var(--ac-bg), transparent)`,
-      }"
+      class="flex-none px-5 pb-5 pt-2 glass-nav"
+      style="border-bottom: none; border-top: 1px solid var(--glass-border)"
     >
       <!-- Error Banner (above input) -->
       <div

@@ -11,13 +11,15 @@ export type AgentThemeId =
   | 'zen-journal'
   | 'neo-pop'
   | 'dark-console'
-  | 'swiss-grid';
+  | 'swiss-grid'
+  | 'glass-light'
+  | 'glass-dark';
 
 /** Storage key for persisting theme preference */
 const STORAGE_KEY_THEME = 'agentTheme';
 
 /** Default theme when none is set */
-const DEFAULT_THEME: AgentThemeId = 'warm-editorial';
+const DEFAULT_THEME: AgentThemeId = 'glass-light';
 
 /** Valid theme IDs for validation */
 const VALID_THEMES: AgentThemeId[] = [
@@ -27,10 +29,14 @@ const VALID_THEMES: AgentThemeId[] = [
   'neo-pop',
   'dark-console',
   'swiss-grid',
+  'glass-light',
+  'glass-dark',
 ];
 
 /** Theme display names for UI */
 export const THEME_LABELS: Record<AgentThemeId, string> = {
+  'glass-light': 'Glass',
+  'glass-dark': 'Glass Dark',
   'warm-editorial': 'Editorial',
   'blueprint-architect': 'Blueprint',
   'zen-journal': 'Zen',

@@ -1,6 +1,6 @@
 <template>
-  <div class="page">
-    <header class="topbar">
+  <div class="page agent-theme glass-backdrop">
+    <header class="topbar glass-nav">
       <h1>{{ m('userscriptsManagerTitle') }}</h1>
       <div class="switch">
         <label>
@@ -309,87 +309,143 @@ function m(key: string, substitutions?: string | string[]) {
     Roboto,
     sans-serif;
   padding: 16px;
+  min-height: 100vh;
+  color: var(--ac-text, #2d3748);
 }
+
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--glass-radius);
 }
+
+.topbar h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
 .create,
 .filters {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
+  background: var(--glass-surface-raised);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+  padding: 16px;
   margin-bottom: 16px;
 }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
+
 label {
   display: flex;
   flex-direction: column;
   font-size: 12px;
   gap: 4px;
+  color: var(--ac-text-muted, #4a5568);
 }
+
 input,
 select,
 textarea {
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  background: var(--glass-surface-sunken);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--glass-radius-sm);
   padding: 8px;
   font-size: 12px;
+  color: var(--ac-text, #2d3748);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: var(--glass-accent-glow);
+}
+
 textarea {
   resize: vertical;
 }
+
 .row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 12px;
 }
+
 button {
-  background: #3b82f6;
+  background: var(--ac-accent, #7c3aed);
   color: #fff;
   border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 8px 14px;
+  border-radius: var(--glass-radius-sm);
   cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 180ms ease;
 }
+
 button:hover {
-  background: #2563eb;
+  opacity: 0.9;
+  transform: translateY(-0.5px);
 }
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .hint {
-  color: #374151;
+  color: var(--ac-text-muted, #4a5568);
   font-size: 12px;
 }
+
 .table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
 }
+
 .table th,
 .table td {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--glass-border-subtle);
   text-align: left;
   padding: 8px;
   font-size: 12px;
 }
+
+.table th {
+  color: var(--ac-text-muted, #4a5568);
+  font-weight: 500;
+}
+
 .actions {
   text-align: right;
 }
+
 .switch input {
   margin-right: 6px;
 }
+
 @media (max-width: 960px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;

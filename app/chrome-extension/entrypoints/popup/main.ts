@@ -3,6 +3,10 @@ import { NativeMessageType } from 'chrome-mcp-shared';
 import './style.css';
 // Import AgentChat theme styles
 import '../sidepanel/styles/agent-chat.css';
+// Import glass design system
+import '../styles/glass/tokens.css';
+import '../styles/glass/utilities.css';
+import '../styles/glass/animations.css';
 import { preloadAgentTheme } from '../sidepanel/composables/useAgentTheme';
 import App from './App.vue';
 
