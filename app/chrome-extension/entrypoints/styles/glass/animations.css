@@ -1,0 +1,129 @@
+@layer components {
+  /* Hover lift for glass cards */
+  .glass-hover {
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .glass-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--glass-shadow-raised);
+  }
+
+  .glass-hover:active {
+    transform: translateY(0);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Scale-in entrance */
+  .glass-appear {
+    animation: glass-scale-in 180ms ease-out;
+  }
+
+  @keyframes glass-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Fade-in entrance */
+  .glass-fade-in {
+    animation: glass-fade 200ms ease-out;
+  }
+
+  @keyframes glass-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Slide up entrance */
+  .glass-slide-up {
+    animation: glass-slide-up 220ms ease-out;
+  }
+
+  @keyframes glass-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Loading shimmer sweep */
+  .glass-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 100%
+    );
+    animation: glass-shimmer-sweep 2s ease-in-out infinite;
+  }
+
+  @keyframes glass-shimmer-sweep {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Focus glow ring */
+  .glass-focus-ring:focus-visible {
+    outline: none;
+    box-shadow: var(--glass-accent-glow), var(--glass-shadow);
+  }
+
+  /* Smooth transition for theme switching */
+  .glass-transition {
+    transition:
+      background 300ms ease,
+      border-color 300ms ease,
+      box-shadow 300ms ease,
+      color 300ms ease;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .glass-hover {
+      transition: none;
+    }
+
+    .glass-hover:hover {
+      transform: none;
+    }
+
+    .glass-appear,
+    .glass-fade-in,
+    .glass-slide-up {
+      animation: none;
+    }
+
+    .glass-shimmer::after {
+      animation: none;
+      display: none;
+    }
+  }
+}

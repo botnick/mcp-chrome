@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import './glass/tokens.css';
+@import './glass/utilities.css';
+@import './glass/animations.css';
 
 /* App background and card helpers */
 @layer base {

@@ -1,0 +1,91 @@
+@layer base {
+  .agent-theme,
+  :root {
+    /* Glass blur levels */
+    --glass-blur-subtle: 6px;
+    --glass-blur: 12px;
+    --glass-blur-strong: 20px;
+    --glass-saturation: 1.2;
+
+    /* Glass surfaces — light mode */
+    --glass-surface: rgba(255, 255, 255, 0.62);
+    --glass-surface-raised: rgba(255, 255, 255, 0.76);
+    --glass-surface-sunken: rgba(255, 255, 255, 0.42);
+    --glass-surface-overlay: rgba(255, 255, 255, 0.88);
+
+    /* Glass borders */
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-border-subtle: rgba(255, 255, 255, 0.18);
+    --glass-border-from: rgba(255, 255, 255, 0.5);
+    --glass-border-to: rgba(255, 255, 255, 0.1);
+
+    /* Glass shadows */
+    --glass-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --glass-shadow-raised: 0 8px 32px -4px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --glass-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    /* Page background gradient */
+    --glass-backdrop: linear-gradient(135deg, #e0e7ff 0%, #f5e6ff 50%, #fce7f3 100%);
+
+    /* Accent glow */
+    --glass-accent-glow: 0 0 0 2px rgba(124, 58, 237, 0.18);
+
+    /* Noise texture opacity */
+    --glass-noise-opacity: 0.03;
+
+    /* Glass radius */
+    --glass-radius-sm: 8px;
+    --glass-radius: 12px;
+    --glass-radius-lg: 16px;
+    --glass-radius-xl: 20px;
+  }
+
+  /* Dark mode glass tokens */
+  .agent-theme[data-agent-theme='glass-dark'],
+  .agent-theme[data-agent-theme='dark-console'],
+  [data-theme='dark'] {
+    --glass-surface: rgba(15, 20, 40, 0.62);
+    --glass-surface-raised: rgba(22, 30, 55, 0.76);
+    --glass-surface-sunken: rgba(10, 14, 28, 0.42);
+    --glass-surface-overlay: rgba(15, 20, 40, 0.88);
+
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-subtle: rgba(255, 255, 255, 0.05);
+    --glass-border-from: rgba(255, 255, 255, 0.16);
+    --glass-border-to: rgba(255, 255, 255, 0.03);
+
+    --glass-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+    --glass-shadow-raised: 0 8px 32px -4px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --glass-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+
+    --glass-backdrop: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1a0e2e 100%);
+
+    --glass-accent-glow: 0 0 0 2px rgba(167, 139, 250, 0.22);
+
+    --glass-noise-opacity: 0.04;
+  }
+
+  /* Glass-light theme — extends warm-editorial base */
+  .agent-theme[data-agent-theme='glass-light'] {
+    --ac-bg: transparent;
+    --ac-surface: var(--glass-surface);
+    --ac-surface-muted: var(--glass-surface-sunken);
+    --ac-border: var(--glass-border);
+    --ac-shadow-card: var(--glass-shadow);
+  }
+
+  /* Glass-dark theme — extends dark-console base */
+  .agent-theme[data-agent-theme='glass-dark'] {
+    --ac-bg: transparent;
+    --ac-surface: var(--glass-surface);
+    --ac-surface-muted: var(--glass-surface-sunken);
+    --ac-border: var(--glass-border);
+    --ac-shadow-card: var(--glass-shadow);
+    --ac-text: #e5e7eb;
+    --ac-text-muted: #9ca3af;
+    --ac-text-subtle: #6b7280;
+    --ac-accent: #a78bfa;
+    --ac-accent-hover: #c4b5fd;
+    --ac-accent-subtle: rgba(167, 139, 250, 0.15);
+  }
+}
