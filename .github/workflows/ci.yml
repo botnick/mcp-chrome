@@ -57,13 +57,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Copy prebuilt WASM
+      - name: Extract and copy prebuilt WASM
         run: |
           mkdir -p packages/wasm-simd/pkg app/chrome-extension/workers
-          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math.js packages/wasm-simd/pkg/
-          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math_bg.wasm packages/wasm-simd/pkg/
-          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math.js app/chrome-extension/workers/
-          cp releases/chrome-extension/latest/chrome-mcp-server-extension/workers/simd_math_bg.wasm app/chrome-extension/workers/
+          unzip -j -o releases/chrome-extension/latest/chrome-mcp-server-lastest.zip \
+            "workers/simd_math.js" "workers/simd_math_bg.wasm" \
+            -d /tmp/wasm-extract
+          cp /tmp/wasm-extract/simd_math.js /tmp/wasm-extract/simd_math_bg.wasm packages/wasm-simd/pkg/
+          cp /tmp/wasm-extract/simd_math.js /tmp/wasm-extract/simd_math_bg.wasm app/chrome-extension/workers/
 
       - name: Build shared
         run: pnpm --filter chrome-mcp-shared build
