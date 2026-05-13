@@ -7,13 +7,17 @@
     <div v-show="currentView === 'home'" class="home-view">
       <div class="header glass-nav">
         <div class="header-content">
-          <h1 class="header-title">Chrome MCP Server</h1>
+          <h1 class="header-title">Chrome AI Bridge</h1>
+          <div class="header-status">
+            <span :class="['status-dot-inline', getStatusClass()]"></span>
+            <span class="header-status-text">{{ friendlyStatus }}</span>
+          </div>
         </div>
       </div>
       <div class="content">
-        <!-- Server Configuration Card -->
+        <!-- Status Card -->
         <div class="section">
-          <h2 class="section-title">{{ getMessage('nativeServerConfigLabel') }}</h2>
+          <h2 class="section-title">Status</h2>
           <div class="config-card glass-raised glass-appear">
             <div class="status-section">
               <div class="status-header">
@@ -36,46 +40,23 @@
               </div>
             </div>
 
-            <div v-if="showMcpConfig" class="mcp-config-section">
-              <div class="mcp-config-header">
-                <p class="mcp-config-label">{{ getMessage('mcpServerConfigLabel') }}</p>
-                <button class="copy-config-button" @click="copyMcpConfig">
-                  {{ copyButtonText }}
-                </button>
-              </div>
-              <div class="mcp-config-content glass-sunken">
-                <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
-              </div>
-            </div>
-            <!-- Self-build install helper: show extension ID + register cmd -->
-            <div v-if="extensionId" class="ext-id-section glass-sunken">
-              <div class="ext-id-header">
-                <p class="ext-id-label">Extension ID (for self-built installs)</p>
-              </div>
-              <div class="ext-id-row">
-                <code class="ext-id-code">{{ extensionId }}</code>
-                <button class="ext-id-copy" @click="copyExtensionId">{{ copyIdText }}</button>
-              </div>
-              <p class="ext-id-hint">Run this in a terminal from the repo root after build:</p>
-              <div class="ext-id-row">
-                <code class="ext-id-code ext-id-cmd">{{ registerCommand }}</code>
-                <button class="ext-id-copy" @click="copyRegisterCommand">{{ copyCmdText }}</button>
-              </div>
-              <p class="ext-id-hint">
-                Then fully quit Chrome (Cmd+Q / close all windows) and re-open before clicking
-                Connect.
-              </p>
-            </div>
-
-            <div class="port-section">
-              <label for="port" class="port-label">{{ getMessage('connectionPortLabel') }}</label>
-              <input
-                type="text"
-                id="port"
-                :value="nativeServerPort"
-                @input="updatePort"
-                class="port-input glass-sunken glass-focus-ring"
-              />
+            <!-- Copy Config button (shown when connected, replaces the ugly JSON block) -->
+            <div v-if="showMcpConfig" class="mcp-copy-section">
+              <button class="copy-config-big-button glass-hover" @click="copyMcpConfig">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                </svg>
+                <span>{{ copyButtonText }}</span>
+              </button>
+              <p class="mcp-copy-hint">Copy MCP config to paste into your AI tool</p>
             </div>
 
             <button
@@ -95,24 +76,10 @@
           </div>
         </div>
 
-        <!-- Quick Tools card -->
+        <!-- Quick Actions - only edit + marker -->
         <div class="section">
-          <h2 class="section-title">Quick Tools</h2>
+          <h2 class="section-title">Quick Actions</h2>
           <div class="rr-icon-buttons glass-raised glass-appear">
-            <button
-              class="rr-icon-btn rr-icon-btn-record rr-icon-btn-coming-soon has-tooltip"
-              @click="startRecording"
-              data-tooltip="Recording feature coming soon"
-            >
-              <RecordIcon :recording="false" />
-            </button>
-            <button
-              class="rr-icon-btn rr-icon-btn-stop rr-icon-btn-coming-soon has-tooltip"
-              @click="stopRecording"
-              data-tooltip="Recording feature coming soon"
-            >
-              <StopIcon />
-            </button>
             <button
               class="rr-icon-btn rr-icon-btn-edit has-tooltip"
               @click="toggleWebEditor"
@@ -123,7 +90,7 @@
             <button
               class="rr-icon-btn rr-icon-btn-marker has-tooltip"
               @click="toggleElementMarker"
-              data-tooltip="Enable element annotation"
+              data-tooltip="Mark page elements"
             >
               <MarkerIcon />
             </button>
@@ -211,8 +178,8 @@
                 </svg>
               </div>
               <div class="entry-content">
-                <span class="entry-title">Element Annotations</span>
-                <span class="entry-desc">Manage page element annotations</span>
+                <span class="entry-title">Page Markers</span>
+                <span class="entry-desc">Mark and manage page elements</span>
               </div>
               <svg
                 class="entry-arrow"
@@ -244,8 +211,8 @@
                 </svg>
               </div>
               <div class="entry-content">
-                <span class="entry-title">Local Models</span>
-                <span class="entry-desc">Semantic engine and model management</span>
+                <span class="entry-title">Search Engine</span>
+                <span class="entry-desc">Semantic search across your tabs</span>
               </div>
               <svg
                 class="entry-arrow"
@@ -260,6 +227,78 @@
               </svg>
             </button>
           </div>
+        </div>
+
+        <!-- Advanced (collapsible) -->
+        <div class="section">
+          <details
+            class="advanced-details glass-sunken"
+            :open="showAdvanced || undefined"
+            @toggle="onAdvancedToggle"
+          >
+            <summary class="advanced-summary">
+              <svg
+                class="advanced-chevron"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              Advanced
+            </summary>
+            <div class="advanced-content">
+              <!-- Port -->
+              <div class="port-section">
+                <label for="port" class="port-label">{{ getMessage('connectionPortLabel') }}</label>
+                <input
+                  type="text"
+                  id="port"
+                  :value="nativeServerPort"
+                  @input="updatePort"
+                  class="port-input glass-sunken glass-focus-ring"
+                />
+              </div>
+
+              <!-- Extension ID -->
+              <div v-if="extensionId" class="ext-id-section">
+                <div class="ext-id-header">
+                  <p class="ext-id-label">Extension ID (for self-built installs)</p>
+                </div>
+                <div class="ext-id-row">
+                  <code class="ext-id-code">{{ extensionId }}</code>
+                  <button class="ext-id-copy" @click="copyExtensionId">{{ copyIdText }}</button>
+                </div>
+                <p class="ext-id-hint">Run this in a terminal from the repo root after build:</p>
+                <div class="ext-id-row">
+                  <code class="ext-id-code ext-id-cmd">{{ registerCommand }}</code>
+                  <button class="ext-id-copy" @click="copyRegisterCommand">{{
+                    copyCmdText
+                  }}</button>
+                </div>
+                <p class="ext-id-hint">
+                  Then fully quit Chrome (Cmd+Q / close all windows) and re-open before clicking
+                  Connect.
+                </p>
+              </div>
+
+              <!-- MCP Config JSON -->
+              <div v-if="showMcpConfig" class="mcp-config-section">
+                <div class="mcp-config-header">
+                  <p class="mcp-config-label">{{ getMessage('mcpServerConfigLabel') }}</p>
+                  <button class="copy-config-button" @click="copyMcpConfig">
+                    {{ copyButtonText }}
+                  </button>
+                </div>
+                <div class="mcp-config-content glass-sunken">
+                  <pre class="mcp-config-json">{{ mcpConfigJson }}</pre>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -288,7 +327,7 @@
             Docs
           </button>
         </div>
-        <p class="footer-text">chrome mcp server for ai</p>
+        <p class="footer-text">v1.0 &middot; Open Source</p>
       </div>
     </div>
 
@@ -401,6 +440,13 @@ const { theme: agentTheme, initTheme } = useAgentTheme();
 
 // Current view state: home or local model page
 const currentView = ref<'home' | 'local-model'>('home');
+
+// Advanced section toggle
+const showAdvanced = ref(false);
+
+function onAdvancedToggle(e: Event) {
+  showAdvanced.value = (e.target as HTMLDetailsElement).open;
+}
 
 // Coming Soon Toast
 const comingSoonToast = ref<{ show: boolean; feature: string }>({ show: false, feature: '' });
@@ -557,6 +603,14 @@ const serverStatus = ref<{
 
 const showMcpConfig = computed(() => {
   return nativeConnectionStatus.value === 'connected' && serverStatus.value.isRunning;
+});
+
+// Friendly status text computed
+const friendlyStatus = computed(() => {
+  if (isConnecting.value) return 'Connecting...';
+  if (nativeConnectionStatus.value === 'connected') return 'Connected';
+  if (nativeConnectionStatus.value === 'disconnected') return 'Disconnected';
+  return 'Detecting...';
 });
 
 const copyButtonText = ref(getMessage('copyConfigButton'));
@@ -1589,6 +1643,12 @@ onMounted(async () => {
 
   await checkSemanticEngineStatus();
   setupServerStatusListener();
+
+  // Auto-connect: if not already connected, attempt connection automatically
+  if (nativeConnectionStatus.value !== 'connected') {
+    testNativeConnection();
+  }
+
   // Auto-refresh workflows list when storage rr_flows changes
   try {
     const onChanged = (changes: any, area: string) => {
@@ -1647,6 +1707,41 @@ onUnmounted(() => {
   font-weight: 700;
   color: var(--ac-text, #1e293b);
   margin: 0;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot-inline {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot-inline.bg-emerald-500 {
+  background-color: #10b981;
+}
+
+.status-dot-inline.bg-red-500 {
+  background-color: #ef4444;
+}
+
+.status-dot-inline.bg-yellow-500 {
+  background-color: #eab308;
+}
+
+.status-dot-inline.bg-gray-500 {
+  background-color: #6b7280;
+}
+
+.header-status-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ac-text-muted, #64748b);
 }
 
 .settings-button {
@@ -1766,8 +1861,54 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
+/* Copy Config big button (replaces ugly JSON block in main view) */
+.mcp-copy-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid var(--glass-border-subtle);
+  padding-top: 14px;
+}
+
+.copy-config-big-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-surface-raised);
+  color: var(--ac-text, #1e293b);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copy-config-big-button:hover {
+  background: var(--glass-surface);
+  box-shadow: var(--glass-shadow);
+}
+
+.copy-config-big-button svg {
+  flex-shrink: 0;
+  color: var(--ac-accent, #7c3aed);
+}
+
+.mcp-copy-hint {
+  font-size: 11px;
+  color: var(--ac-text-subtle, #9ca3af);
+  margin: 0;
+  text-align: center;
+}
+
+/* MCP Config section (inside Advanced) */
 .mcp-config-section {
   border-top: 1px solid var(--glass-border-subtle);
+  padding-top: 12px;
 }
 
 .mcp-config-header {
@@ -1818,12 +1959,60 @@ onUnmounted(() => {
   overflow-x: auto;
 }
 
+/* Advanced collapsible section */
+.advanced-details {
+  padding: 0;
+  border-radius: var(--glass-radius);
+  overflow: hidden;
+}
+
+.advanced-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac-text-muted, #64748b);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: color 0.2s ease;
+}
+
+.advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-summary:hover {
+  color: var(--ac-text, #1e293b);
+}
+
+.advanced-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.advanced-details[open] .advanced-chevron {
+  transform: rotate(90deg);
+}
+
+.advanced-content {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Extension ID section (inside Advanced) */
 .ext-id-section {
-  margin-top: 12px;
+  margin-top: 4px;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--glass-surface-sunken);
+  border-radius: var(--glass-radius-sm);
 }
 
 .ext-id-label {
@@ -2059,43 +2248,6 @@ onUnmounted(() => {
   height: 24px;
 }
 
-/* Record button - red */
-.rr-icon-btn-record {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.rr-icon-btn-record:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-}
-
-/* Recording state - pulse animation */
-.rr-icon-btn-recording {
-  animation: pulse-recording 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-recording {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-  }
-}
-
-/* Stop button - dark red */
-.rr-icon-btn-stop {
-  background: rgba(185, 28, 28, 0.1);
-  color: #b91c1c;
-}
-
-.rr-icon-btn-stop:hover:not(:disabled) {
-  background: rgba(185, 28, 28, 0.2);
-  color: #991b1b;
-}
-
 /* Edit button - blue */
 .rr-icon-btn-edit {
   background: rgba(37, 99, 235, 0.1);
@@ -2116,18 +2268,6 @@ onUnmounted(() => {
 .rr-icon-btn-marker:hover:not(:disabled) {
   background: rgba(16, 185, 129, 0.2);
   color: #059669;
-}
-
-/* Coming Soon button styles */
-.rr-icon-btn-coming-soon {
-  opacity: 0.5;
-  cursor: default !important;
-}
-
-.rr-icon-btn-coming-soon:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  opacity: 0.6;
 }
 
 /* CSS Tooltip - instant display */
