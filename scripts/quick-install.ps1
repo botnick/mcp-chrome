@@ -36,6 +36,7 @@ $ExtOut = Join-Path $Root "app\chrome-extension\.output\chrome-mv3"
 $BridgeDist = Join-Path $Root "app\native-server\dist"
 $WasmPkg = Join-Path $Root "packages\wasm-simd\pkg"
 $WasmPrebuilt = Join-Path $Root "releases\chrome-extension\latest\chrome-mcp-server-extension\workers"
+$WasmZip = Join-Path $Root "releases\chrome-extension\latest\chrome-mcp-server-lastest.zip"
 $ExtWorkers = Join-Path $Root "app\chrome-extension\workers"
 
 function Write-Info  { param($Msg) Write-Host "-> $Msg" -ForegroundColor Cyan }
@@ -49,6 +50,28 @@ function Assert-Command {
         Write-Err "Missing required command: $Name"
         exit 1
     }
+}
+
+function Ensure-WasmPrebuilt {
+    if ((Test-Path (Join-Path $WasmPrebuilt "simd_math.js")) -and (Test-Path (Join-Path $WasmPrebuilt "simd_math_bg.wasm"))) {
+        return
+    }
+    if (-not (Test-Path $WasmZip)) {
+        Write-Err "Prebuilt WASM zip not found at $WasmZip"
+        Write-Err "You need Rust + wasm-pack to build from source. See packages/wasm-simd/BUILD.md."
+        exit 1
+    }
+    Write-Info "Extracting prebuilt WASM from release zip"
+    New-Item -ItemType Directory -Force -Path $WasmPrebuilt | Out-Null
+    $tmp = Join-Path $env:TEMP ("chrome-mcp-wasm-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        Expand-Archive -Path $WasmZip -DestinationPath $tmp -Force
+        Copy-Item (Join-Path $tmp "workers\simd_math.js") $WasmPrebuilt -Force
+        Copy-Item (Join-Path $tmp "workers\simd_math_bg.wasm") $WasmPrebuilt -Force
+    } finally {
+        if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
+    }
+    Write-Ok "Extracted WASM to $WasmPrebuilt"
 }
 
 function Invoke-Build {
@@ -74,11 +97,7 @@ function Invoke-Build {
         Pop-Location
     }
 
-    if (-not (Test-Path (Join-Path $WasmPrebuilt "simd_math.js"))) {
-        Write-Err "Prebuilt WASM not found at $WasmPrebuilt"
-        Write-Err "You need Rust + wasm-pack to build from source. See packages/wasm-simd/BUILD.md."
-        exit 1
-    }
+    Ensure-WasmPrebuilt
 
     Write-Info "Copying WASM into wasm-simd/pkg"
     New-Item -ItemType Directory -Force -Path $WasmPkg | Out-Null
