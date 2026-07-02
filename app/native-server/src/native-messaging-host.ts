@@ -14,9 +14,60 @@ interface PendingRequest {
 export class NativeMessagingHost {
   private associatedServer: Server | null = null;
   private pendingRequests: Map<string, PendingRequest> = new Map();
+  // Standalone mode decouples the HTTP server lifecycle from the native-messaging stdin.
+  // When true, losing stdin (MV3 service worker slept / Chrome dropped the port) must NOT
+  // tear down the HTTP server or exit the process.
+  private standalone = false;
+
+  // Outbound transport. In legacy (Chrome-spawned, in-process) mode this is null and
+  // messages are written to stdout. In hub mode (the standalone `serve` process) the
+  // BridgeHub installs a sink that writes to the active bridge socket, so outbound
+  // messages reach the browser through the Chrome-spawned bridge rather than a dead stdout.
+  private outbound: ((message: any) => void) | null = null;
+  // Whether a bridge is currently connected (only meaningful in hub mode).
+  private bridgeConnected = false;
 
   public setServer(serverInstance: Server): void {
     this.associatedServer = serverInstance;
+  }
+
+  public setStandalone(value: boolean): void {
+    this.standalone = value;
+  }
+
+  private isStandalone(): boolean {
+    return this.standalone || process.env.CHROME_MCP_STANDALONE === '1';
+  }
+
+  /**
+   * Install (or clear) the outbound sink used to reach the browser. Set by BridgeHub.
+   */
+  public setOutbound(sink: ((message: any) => void) | null): void {
+    this.outbound = sink;
+  }
+
+  /**
+   * Mark whether a bridge (Chrome-spawned native host) is currently connected to the hub.
+   */
+  public setBridgeConnected(connected: boolean): void {
+    this.bridgeConnected = connected;
+  }
+
+  /**
+   * Feed a message that arrived from the bridge into the normal message handler.
+   */
+  public dispatchFromBridge(message: any): void {
+    void this.handleMessage(message);
+  }
+
+  /**
+   * Whether the browser is currently reachable. In hub mode this requires a live bridge;
+   * in legacy stdio mode stdout is always present so we optimistically return true (a
+   * missing extension surfaces as a request timeout, exactly as before).
+   */
+  public isExtensionReachable(): boolean {
+    if (this.outbound) return this.bridgeConnected;
+    return true;
   }
 
   // add message handler to wait for start server
@@ -196,6 +247,13 @@ export class NativeMessagingHost {
     timeoutMs: number = TIMEOUTS.DEFAULT_REQUEST_TIMEOUT,
   ): Promise<any> {
     return new Promise((resolve, reject) => {
+      // Fail fast when the browser is not reachable instead of enqueuing a request that
+      // can only ever time out (hub mode with no bridge connected).
+      if (!this.isExtensionReachable()) {
+        reject(new Error('No active browser bridge connected'));
+        return;
+      }
+
       const requestId = uuidv4(); // Generate unique request ID
 
       const timeoutId = setTimeout(() => {
@@ -225,9 +283,13 @@ export class NativeMessagingHost {
     }
     try {
       if (this.associatedServer.isRunning) {
+        // The server is already up (typical in standalone mode, where the server outlives
+        // any single native host). Report SERVER_STARTED — not ERROR — so the extension
+        // treats itself as connected and resets its reconnect loop instead of spinning on
+        // a "port already running" error.
         this.sendMessage({
-          type: NativeMessageType.ERROR,
-          payload: { message: 'Server is already running' },
+          type: NativeMessageType.SERVER_STARTED,
+          payload: { port: this.associatedServer.getRunningPort() ?? port },
         });
         return;
       }
@@ -249,6 +311,13 @@ export class NativeMessagingHost {
   private async stopServer(): Promise<void> {
     if (!this.associatedServer) {
       this.sendError('Internal error: server instance not set');
+      return;
+    }
+    // In standalone/hub mode the HTTP server is shared and outlives any single native host;
+    // a STOP from one browser must not tear it down for everyone. Acknowledge without
+    // actually stopping the shared server.
+    if (this.isStandalone()) {
+      this.sendMessage({ type: NativeMessageType.SERVER_STOPPED });
       return;
     }
     try {
@@ -274,6 +343,17 @@ export class NativeMessagingHost {
    * Send message to Chrome extension
    */
   public sendMessage(message: any): void {
+    // Hub mode: route to the active bridge socket instead of this process's stdout
+    // (which, in the standalone server, is not connected to any browser).
+    if (this.outbound) {
+      try {
+        this.outbound(message);
+      } catch {
+        // Ignore; the hub clears the bridge on socket errors.
+      }
+      return;
+    }
+
     try {
       const messageString = JSON.stringify(message);
       const messageBuffer = Buffer.from(messageString);
@@ -305,15 +385,30 @@ export class NativeMessagingHost {
   }
 
   /**
-   * Clean up resources
+   * Reject and clear all in-flight requests. Called on stdin teardown and, in hub mode,
+   * when the active bridge disconnects — so callers fail fast instead of awaiting a timeout.
    */
-  private cleanup(): void {
-    // Reject all pending requests
+  public rejectPendingRequests(reason: string): void {
     this.pendingRequests.forEach((pending) => {
       clearTimeout(pending.timeoutId);
-      pending.reject(new Error('Native host is shutting down or Chrome disconnected.'));
+      pending.reject(new Error(reason));
     });
     this.pendingRequests.clear();
+  }
+
+  /**
+   * Clean up resources when the native-messaging stdin ends.
+   */
+  private cleanup(): void {
+    this.rejectPendingRequests('Native host is shutting down or Chrome disconnected.');
+
+    // Standalone mode: the HTTP server is a long-lived process independent of the
+    // native-messaging bridge. A dropped stdin only means the current stdio bridge is gone
+    // (the extension will re-attach); it must NOT stop the HTTP server or kill the process.
+    // This is the structural fix for the "server dies when the MV3 SW sleeps" disconnect.
+    if (this.isStandalone()) {
+      return;
+    }
 
     if (this.associatedServer && this.associatedServer.isRunning) {
       this.associatedServer
