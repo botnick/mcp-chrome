@@ -45,6 +45,7 @@ interface ExtensionRequestPayload {
 export class Server {
   private fastify: FastifyInstance;
   public isRunning = false;
+  private runningPort: number | null = null;
   private nativeHost: NativeMessagingHost | null = null;
   private transportsMap: Map<string, StreamableHTTPServerTransport | SSEServerTransport> =
     new Map();
@@ -114,6 +115,34 @@ export class Server {
         status: 'ok',
         message: 'pong',
       });
+    });
+
+    // Deep health: proves the full server <-> browser round trip, not just that the HTTP
+    // server is listening. `/ping` can be green while no browser is reachable (e.g. the
+    // standalone server has no bridge attached) — the watchdog uses this instead.
+    this.fastify.get('/bridge-health', async (_request: FastifyRequest, reply: FastifyReply) => {
+      if (!this.nativeHost || !this.nativeHost.isExtensionReachable()) {
+        return reply.status(HTTP_STATUS.SERVICE_UNAVAILABLE).send({
+          status: 'error',
+          bridge: false,
+          message: ERROR_MESSAGES.NATIVE_HOST_NOT_AVAILABLE,
+        });
+      }
+      try {
+        // Reuse the extension's process_data echo as a lightweight round-trip probe.
+        await this.nativeHost.sendRequestToExtensionAndWait(
+          { health: true },
+          'process_data',
+          TIMEOUTS.DEFAULT_REQUEST_TIMEOUT,
+        );
+        return reply.status(HTTP_STATUS.OK).send({ status: 'ok', bridge: true });
+      } catch (error: unknown) {
+        return reply.status(HTTP_STATUS.SERVICE_UNAVAILABLE).send({
+          status: 'error',
+          bridge: false,
+          message: (error as Error).message,
+        });
+      }
     });
   }
 
@@ -335,10 +364,19 @@ export class Server {
       process.env.MCP_HTTP_PORT = String(port);
 
       this.isRunning = true;
+      this.runningPort = port;
     } catch (err) {
       this.isRunning = false;
+      this.runningPort = null;
       throw err;
     }
+  }
+
+  /**
+   * The port the server is currently listening on, or null if it is not running.
+   */
+  public getRunningPort(): number | null {
+    return this.isRunning ? this.runningPort : null;
   }
 
   public async stop(): Promise<void> {
@@ -350,8 +388,10 @@ export class Server {
       await this.fastify.close();
       closeDb();
       this.isRunning = false;
+      this.runningPort = null;
     } catch (err) {
       this.isRunning = false;
+      this.runningPort = null;
       closeDb();
       throw err;
     }

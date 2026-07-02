@@ -13,6 +13,10 @@ import {
 import { BrowserType, parseBrowserType, detectInstalledBrowsers } from './scripts/browser-config';
 import { runDoctor } from './scripts/doctor';
 import { runReport } from './scripts/report';
+import serverInstance from './server';
+import nativeMessagingHostInstance from './native-messaging-host';
+import { NATIVE_SERVER_PORT } from './constant';
+import { BridgeHub } from './bridge/hub';
 
 program
   .version(require('../package.json').version)
@@ -133,6 +137,61 @@ program
       console.error(colorText(`Registration failed: ${error.message}`, 'red'));
       process.exit(1);
     }
+  });
+
+// Run the HTTP/MCP server as a long-lived standalone process
+program
+  .command('serve')
+  .description(
+    'Run the MCP HTTP server as a long-lived standalone process, decoupled from the ' +
+      'Chrome native-messaging stdin lifecycle (the server stays up even if the MV3 ' +
+      'service worker sleeps or the native port drops)',
+  )
+  .option('-p, --port <port>', 'Port to listen on (default: 12306)')
+  .action(async (options) => {
+    const parsed = options.port ? parseInt(options.port, 10) : NATIVE_SERVER_PORT;
+    const port =
+      Number.isFinite(parsed) && parsed > 0 && parsed <= 65535 ? parsed : NATIVE_SERVER_PORT;
+
+    // Mark standalone so a dropped native-messaging stdin never stops the server or exits.
+    process.env.CHROME_MCP_STANDALONE = '1';
+    nativeMessagingHostInstance.setStandalone(true);
+    serverInstance.setNativeHost(nativeMessagingHostInstance);
+    nativeMessagingHostInstance.setServer(serverInstance);
+
+    const hub = new BridgeHub(nativeMessagingHostInstance);
+
+    try {
+      await serverInstance.start(port, nativeMessagingHostInstance);
+      // Start the IPC hub so the Chrome-spawned native host can attach as a thin bridge
+      // and forward MCP tool traffic to the browser.
+      await hub.start();
+      console.log(
+        colorText(`Standalone MCP server listening on http://127.0.0.1:${port}`, 'green'),
+      );
+      console.log(colorText(`Bridge socket ready at ${hub.socketPath}`, 'blue'));
+    } catch (error: any) {
+      console.error(colorText(`Failed to start standalone server: ${error.message}`, 'red'));
+      process.exit(1);
+    }
+
+    const shutdown = async (signal: string) => {
+      console.log(colorText(`Received ${signal}, shutting down standalone server...`, 'blue'));
+      try {
+        await hub.stop();
+      } catch {
+        // Ignore errors during shutdown
+      }
+      try {
+        await serverInstance.stop();
+      } catch {
+        // Ignore errors during shutdown
+      }
+      process.exit(0);
+    };
+    process.on('SIGINT', () => void shutdown('SIGINT'));
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
+    // The open Fastify server handle keeps the event loop alive; no stdin is read here.
   });
 
 // Fix execution permissions

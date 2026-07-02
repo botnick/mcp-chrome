@@ -225,6 +225,41 @@ async function getPreferredPort(override?: unknown): Promise<number> {
   return NATIVE_HOST.DEFAULT_PORT;
 }
 
+// ==================== Health Probe ====================
+
+/**
+ * Probe the server's `/bridge-health` endpoint. Unlike `/ping` (which only proves the HTTP
+ * server is listening), this performs a real server -> browser round trip, so it is green
+ * only when the server can actually reach a browser. This distinguishes a live-but-useless
+ * server (HTTP up, no bridge attached) from a genuinely healthy one — the desync the
+ * founder hit, where the port looked connected but tool calls timed out.
+ *
+ * @returns true only if the round trip succeeds within the timeout.
+ */
+async function probeBridgeHealth(timeoutMs = 6000): Promise<boolean> {
+  let port: number;
+  try {
+    port = await getPreferredPort();
+  } catch {
+    port = NATIVE_HOST.DEFAULT_PORT;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/bridge-health`, {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ==================== Reconnect Scheduling ====================
 
 /**
@@ -464,6 +499,82 @@ export function connectNativeHost(port: number = NATIVE_HOST.DEFAULT_PORT): bool
   }
 }
 
+// ==================== Watchdog ====================
+
+const WATCHDOG_ALARM_NAME = 'native-host-watchdog';
+const WATCHDOG_INTERVAL_MS = 22_000;
+let watchdogInterval: ReturnType<typeof setInterval> | null = null;
+let watchdogRunning = false;
+
+/**
+ * Periodic deep health check. Verifies BOTH the native port liveness and the
+ * `/bridge-health` round trip. If either is unhealthy while auto-connect is on, force a
+ * full reconnect.
+ *
+ * This is the resilience layer for the disconnect bug: when the MV3 service worker sleeps,
+ * the native port drops and the server may become unreachable — the watchdog (woken by
+ * chrome.alarms or the interval) detects the failed `/bridge-health` round trip and
+ * rebuilds the bridge instead of leaving a stale "connected" state.
+ */
+async function runWatchdog(): Promise<void> {
+  if (watchdogRunning) return; // avoid overlapping runs (alarm + interval can coincide)
+  watchdogRunning = true;
+  try {
+    if (!autoConnectLoaded) {
+      autoConnectEnabled = await loadNativeAutoConnectEnabled();
+      autoConnectLoaded = true;
+      syncKeepaliveHold();
+    }
+    if (!autoConnectEnabled || manualDisconnect) return;
+
+    const bridgeHealthy = await probeBridgeHealth();
+    const portConnected = nativePort !== null;
+
+    if (portConnected && bridgeHealthy) return; // fully healthy, nothing to do
+
+    if (portConnected && !bridgeHealthy) {
+      // Port looks alive but the server can't reach the browser (the desync). Drop the
+      // stale port so the reconnect path rebuilds the whole bridge from scratch.
+      console.warn(
+        `${LOG_PREFIX} Watchdog: native port up but /bridge-health failing — forcing reconnect`,
+      );
+      try {
+        nativePort?.disconnect();
+      } catch {
+        // Ignore
+      }
+      nativePort = null;
+      await markServerStopped('watchdog_http_dead');
+    } else {
+      console.debug(`${LOG_PREFIX} Watchdog: not connected (bridge=${bridgeHealthy}) — ensuring`);
+    }
+
+    void ensureNativeConnected('watchdog').catch(() => {});
+  } finally {
+    watchdogRunning = false;
+  }
+}
+
+/**
+ * Start the watchdog. Uses two independent timers:
+ * - chrome.alarms: survives service-worker idle termination (wakes the SW to run the check).
+ * - setInterval: provides sub-minute cadence while the SW is awake.
+ */
+function startWatchdog(): void {
+  try {
+    chrome.alarms.create(WATCHDOG_ALARM_NAME, { periodInMinutes: 0.5 });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === WATCHDOG_ALARM_NAME) void runWatchdog();
+    });
+  } catch (error) {
+    console.warn(`${LOG_PREFIX} Failed to create watchdog alarm`, error);
+  }
+
+  if (!watchdogInterval) {
+    watchdogInterval = setInterval(() => void runWatchdog(), WATCHDOG_INTERVAL_MS);
+  }
+}
+
 /**
  * Initialize native host listeners and load initial state
  */
@@ -479,6 +590,9 @@ export const initNativeHostListener = () => {
 
   // Auto-connect on SW activation (covers SW restart after idle termination)
   void ensureNativeConnected('sw_startup').catch(() => {});
+
+  // Start the health watchdog (chrome.alarms + interval) to detect and heal disconnects.
+  startWatchdog();
 
   // Auto-connect on Chrome browser startup
   chrome.runtime.onStartup.addListener(() => {
@@ -546,8 +660,27 @@ export const initNativeHostListener = () => {
     }
 
     if (msgType === NativeMessageType.PING_NATIVE) {
-      const connected = nativePort !== null;
-      sendResponse({ connected, autoConnectEnabled });
+      // Deep health: report connected only when the native port is up AND the server can
+      // actually reach the browser (round-trip via /bridge-health).
+      (async () => {
+        const portConnected = nativePort !== null;
+        const bridgeHealthy = await probeBridgeHealth();
+        const connected = portConnected && bridgeHealthy;
+
+        if (portConnected && !bridgeHealthy) {
+          // Stale port over an unreachable browser → self-heal instead of a false positive.
+          try {
+            nativePort?.disconnect();
+          } catch {
+            // Ignore
+          }
+          nativePort = null;
+          await markServerStopped('ping_bridge_unhealthy');
+          void ensureNativeConnected('ping_native_bridge_unhealthy').catch(() => {});
+        }
+
+        sendResponse({ connected, portConnected, bridgeHealthy, autoConnectEnabled });
+      })();
       return true;
     }
 
